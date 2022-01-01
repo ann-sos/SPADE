@@ -1,0 +1,7 @@
+SPADEenv
+.vscode
+.pytest_cache
+src/SPADE.egg-info
+tests/__pycache__/*
+src/SPADE/__pycache__/*
+
