@@ -1,5 +1,5 @@
 import pandas as pd
-
+from pandasql import sqldf
 
 def read_dataset(path: str) -> pd.DataFrame:
     """
@@ -23,12 +23,36 @@ def read_dataset(path: str) -> pd.DataFrame:
     return pd.DataFrame(data, columns=['SID', 'EID', 'Items'])
 
 
+def sequence_items_join(A, B):
+    return sqldf(f'''
+    select B.SID, B.EID
+    from A as A
+    join B as B
+    on
+    B.SID == A.SID
+    and
+    B.EID > A.EID;
+''')
+
+
+def event_items_join(A, B):
+    return sqldf(f'''
+    select B.SID, B.EID
+    from A as A
+    join B as B
+    on
+    B.SID == A.SID
+    and
+    B.EID == A.EID;
+''')
+    
+    
 def find_F1(df: pd.DataFrame, min_sup: int) -> pd.DataFrame:
     """
     Finds frequent (support >= min_sup) items or 1-sequences,
     e.g. {A}, {B}, returns dataframe with these items and their support.
     """
-    atoms_series = df.groupby('Items')['SID'].nunique()
+    atoms_series = df.groupby('Items')['SID'].nunique() #atoms_series is pd.Series where items=index and their support = values.
     atoms = pd.DataFrame({'Items': atoms_series.index, 'Support': atoms_series.values})
     return atoms.loc[atoms['Support'] >= min_sup]
 
