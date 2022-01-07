@@ -102,7 +102,7 @@ def find_F2(F1: dict, supports: pd.DataFrame, min_sup: int) -> Tuple[pd.DataFram
 
 
 def generate_for_equal_len(item1, item2, branch, control_list: set) -> Tuple[bool, list, pd.DataFrame] or Tuple[bool, list, list]:
-    is_event = True   
+    is_event = True
     for x, y in map(lambda x, y : (x, y), item1, item2):
         if x.intersection(y):
             continue
@@ -111,26 +111,43 @@ def generate_for_equal_len(item1, item2, branch, control_list: set) -> Tuple[boo
             break
     if is_event:
         generated_item = [set(sorted(a.union(b))) for a,b in map(lambda x, y : (x, y), item1, item2)]
-        ev_df = event_items_join(branch[repr(item1)], branch[repr(item2)])
-        return is_event, generated_item, ev_df
+        if repr(generated_item) not in control_list:
+            ev_df = event_items_join(branch[repr(item1)], branch[repr(item2)])
+            return is_event, generated_item, ev_df
+        return is_event, generated_item, pd.DataFrame()
     else:
         ev = [set(sorted(a.union(b))) for a, b in map(lambda x, y : (x, y), item1, item2)]
         sq1 = (item2+[item1[-1]])
         sq2 = (item1+[item2[-1]])
-        sq2_df = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
-        sq1_df = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
-        ev_df = event_items_join(branch[repr(item1)], branch[repr(item2)])
+        if repr(sq2) not in control_list:
+            sq2_df = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
+        else:
+            sq2_df = None
+        if repr(sq1) not in control_list:
+            sq1_df = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
+        else:
+            sq1_df = None
+        if repr(ev) not in control_list:
+            ev_df = event_items_join(branch[repr(item1)], branch[repr(item2)])
+        else:
+            ev_df = None
         return is_event, [ev, sq1, sq2], [ev_df, sq1_df, sq2_df]
 
 
 def generate_for_unequal_len(item1, item2, branch, control_list: set) -> Tuple[list, pd.DataFrame]:
     if len(item1) > len(item2):
         generated_item = item2+[item1[-1]]
-        sdf = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
+        if repr(generated_item) not in control_list:
+            sdf = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
+        else:
+            sdf = None
         return generated_item, sdf
     elif len(item1) < len(item2):
         generated_item = item1+[item2[-1]]
-        sdf = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
+        if repr(generated_item) not in control_list:
+            sdf = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
+        else:
+            sdf = None
         return generated_item, sdf
     
 
