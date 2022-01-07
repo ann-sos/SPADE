@@ -101,6 +101,38 @@ def find_F2(F1: dict, supports: pd.DataFrame, min_sup: int):
     return supports, item_tree
 
 
+def generate_for_equal_len(item1, item2, branch):
+    is_event = True   
+    for x, y in map(lambda x, y : (x, y), item1, item2):
+        if x.intersection(y):
+            continue
+        else:
+            is_event = False
+            break
+    if is_event:
+        generated_item = [set(sorted(a.union(b))) for a,b in map(lambda x, y : (x, y), item1, item2)]
+        ev_df = event_items_join(branch[repr(item1)], branch[repr(item2)])
+        return is_event, generated_item, ev_df
+    else:
+        ev = [set(sorted(a.union(b))) for a, b in map(lambda x, y : (x, y), item1, item2)]
+        sq1 = (item2+[item1[-1]])
+        sq2 = (item1+[item2[-1]])
+        sq2_df = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
+        sq1_df = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
+        ev_df = event_items_join(branch[repr(item1)], branch[repr(item2)])
+        return is_event, [ev, sq1, sq2], [ev_df, sq1_df, sq2_df]
+
+
+def generate_for_unequal_len(item1, item2, branch):
+    if len(item1) > len(item2):
+        generated_item = item2+[item1[-1]]
+        sdf = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
+        return generated_item, sdf
+    elif len(item1) < len(item2):
+        generated_item = item1+[item2[-1]]
+        sdf = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
+        return generated_item, sdf
+
 def spade(df: pd.DataFrame, min_sup: int):
     # (STEP 1): Find atoms and their support
     supports, F1 = find_F1(df, min_sup)
