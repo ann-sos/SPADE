@@ -1,4 +1,4 @@
-C D -1 A B C -1 A B F -1 A C D F -2
-A B F -1 E -2
-A B F -2
-D G H -1 B F -1 A G H -2
+C D -1 A B C -1 A B F -1 A C D F -1 -2
+A B F -1 E -1 -2
+A B F -1 -2
+D G H -1 B F -1 A G H -1 -2
