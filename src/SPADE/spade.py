@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union
+from typing import Tuple, Union
 import pandas as pd
 from pandasql import sqldf
 
@@ -25,7 +25,7 @@ def read_dataset(path: str) -> pd.DataFrame:
     return pd.DataFrame(data, columns=['SID', 'EID', 'Items'])
 
 
-def sequence_items_join(A, B):
+def sequence_items_join(A, B) -> pd.DataFrame:
     return sqldf(f'''
     select B.SID, B.EID
     from A as A
@@ -37,7 +37,7 @@ def sequence_items_join(A, B):
 ''')
 
 
-def event_items_join(A, B):
+def event_items_join(A, B) -> pd.DataFrame:
     return sqldf(f'''
     select B.SID, B.EID
     from A as A
@@ -66,7 +66,7 @@ def find_F1(df: pd.DataFrame, min_sup: int) -> pd.DataFrame:
 
 
 
-def find_F2(F1: dict, supports: pd.DataFrame, min_sup: int):
+def find_F2(F1: dict, supports: pd.DataFrame, min_sup: int) -> Tuple[pd.DataFrame, dict]:
     sq2_ctr = set()
     item_tree = {}   
     F1_list = list(F1.keys())
@@ -101,7 +101,7 @@ def find_F2(F1: dict, supports: pd.DataFrame, min_sup: int):
     return supports, item_tree
 
 
-def generate_for_equal_len(item1, item2, branch):
+def generate_for_equal_len(item1, item2, branch, control_list: set) -> Tuple[bool, list, pd.DataFrame] or Tuple[bool, list, list]:
     is_event = True   
     for x, y in map(lambda x, y : (x, y), item1, item2):
         if x.intersection(y):
@@ -123,7 +123,7 @@ def generate_for_equal_len(item1, item2, branch):
         return is_event, [ev, sq1, sq2], [ev_df, sq1_df, sq2_df]
 
 
-def generate_for_unequal_len(item1, item2, branch):
+def generate_for_unequal_len(item1, item2, branch, control_list: set) -> Tuple[list, pd.DataFrame]:
     if len(item1) > len(item2):
         generated_item = item2+[item1[-1]]
         sdf = sequence_items_join(branch[repr(item2)], branch[repr(item1)])
@@ -134,7 +134,7 @@ def generate_for_unequal_len(item1, item2, branch):
         return generated_item, sdf
     
 
-def find_remaining(item_tree: dict, supports: pd.DataFrame, min_sup: int):
+def find_remaining(item_tree: dict, supports: pd.DataFrame, min_sup: int) -> Tuple[pd.DataFrame, dict]:
     three_dict = {}
     crtl_lst = set()
 
@@ -150,7 +150,7 @@ def find_remaining(item_tree: dict, supports: pd.DataFrame, min_sup: int):
                     #event with event PB with PD should give: PBD
                     #seq with seq P->A with P->F should give: P->AF, P->A->F, P->F->A
                     #print(f"Item1: {item1}\nItem2: {item2}")
-                    is_event, generated, sdfs = generate_for_equal_len(item1, item2, branch)
+                    is_event, generated, sdfs = generate_for_equal_len(item1, item2, branch, crtl_lst)
                     if is_event:
                         if repr(generated) not in crtl_lst:
                             # TODO
@@ -169,7 +169,7 @@ def find_remaining(item_tree: dict, supports: pd.DataFrame, min_sup: int):
                                 crtl_lst.add(repr(item))
                 #event atom with sequence atom: PB with P->A should give PB->A   
                 else:
-                    generated, sdf = generate_for_unequal_len(item1, item2, branch)
+                    generated, sdf = generate_for_unequal_len(item1, item2, branch, crtl_lst)
                     if repr(generated) not in crtl_lst:
                             support_value = sdf['SID'].nunique()
                             if support_value >= min_sup:
@@ -195,6 +195,6 @@ def spade(df: pd.DataFrame, min_sup: int):
     return supports
 
 if __name__ == "__main__":
-    df = read_dataset(r"BMS1_spmf.txt")
-    support_results = spade(df, 1000)
+    df = read_dataset(r"tests/test_data.txt")
+    support_results = spade(df, 2)
     support_results.to_csv(f'results_{datetime.now().strftime("%y-%m-%d-%H:%M")}.txt')
