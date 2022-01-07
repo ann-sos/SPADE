@@ -132,6 +132,54 @@ def generate_for_unequal_len(item1, item2, branch):
         generated_item = item1+[item2[-1]]
         sdf = sequence_items_join(branch[repr(item1)], branch[repr(item2)])
         return generated_item, sdf
+    
+
+def find_remaining(item_tree: dict, supports: pd.DataFrame, min_sup: int):
+    three_dict = {}
+    crtl_lst = set()
+
+    for branch in item_tree.values():
+        for item1 in branch:
+            item1 = eval(item1)
+            three_dict[repr(item1)] = {}
+            for item2 in branch:
+                item2 = eval(item2)
+                if item1 == item2:
+                    continue
+                if len(item1) == len(item2):
+                    #event with event PB with PD should give: PBD
+                    #seq with seq P->A with P->F should give: P->AF, P->A->F, P->F->A
+                    #print(f"Item1: {item1}\nItem2: {item2}")
+                    is_event, generated, sdfs = generate_for_equal_len(item1, item2, branch)
+                    if is_event:
+                        if repr(generated) not in crtl_lst:
+                            # TODO
+                            support_value = sdfs['SID'].nunique()
+                            if support_value >= min_sup:
+                                supports = supports.append({'Items': repr(generated), 'Support': support_value}, ignore_index=True)
+                                three_dict[repr(item1)][repr(generated)] = sdfs   
+                            crtl_lst.add(repr(generated))
+                    else:
+                        for item, sdf in map(lambda x, y : (x, y), generated, sdfs):
+                            if repr(item) not in crtl_lst:
+                                support_value = sdf['SID'].nunique()
+                                if support_value >= min_sup:
+                                    supports = supports.append({'Items': repr(item), 'Support': support_value}, ignore_index=True)
+                                    three_dict[repr(item1)][repr(item)] = sdf                          
+                                crtl_lst.add(repr(item))
+                #event atom with sequence atom: PB with P->A should give PB->A   
+                else:
+                    generated, sdf = generate_for_unequal_len(item1, item2, branch)
+                    if repr(generated) not in crtl_lst:
+                            support_value = sdf['SID'].nunique()
+                            if support_value >= min_sup:
+                                supports = supports.append({'Items': repr(generated), 'Support': support_value}, ignore_index=True)
+                                three_dict[repr(item1)][repr(generated)] = sdf
+
+                            crtl_lst.add(repr(generated))
+    three_dict = { k : v for k,v in three_dict.items() if v}
+    return supports, three_dict
+
 
 def spade(df: pd.DataFrame, min_sup: int):
     # (STEP 1): Find atoms and their support
