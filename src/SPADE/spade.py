@@ -212,6 +212,6 @@ def spade(df: pd.DataFrame, min_sup: int):
     return supports
 
 if __name__ == "__main__":
-    df = read_dataset(r"tests/test_data.txt")
+    df = read_dataset(r"src/SPADE/BMS1_test.txt")
     support_results = spade(df, 2)
     support_results.to_csv(f'results_{datetime.now().strftime("%y-%m-%d-%H:%M")}.txt')
