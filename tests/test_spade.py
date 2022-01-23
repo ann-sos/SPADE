@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from SPADE.spade import read_dataset, find_F1
+from SPADE.spade import read_dataset, find_F1, spade
 
 
 @pytest.fixture()
@@ -15,6 +15,28 @@ def df_expected() -> pd.DataFrame:
 def atoms_expected() -> pd.DataFrame:
     return pd.DataFrame([["{'A'}", 4], ["{'B'}", 4], ["{'D'}", 2], ["{'F'}", 4]])
 
+@pytest.fixture()
+def result_expected() -> pd.DataFrame:
+    return pd.DataFrame([
+["{'A'}", 4],
+["{'B'}", 4],
+["{'D'}", 2],
+["{'F'}", 4],
+["[{'A', 'B'}]", 3],
+["[{'A', 'F'}]", 3],
+["[{'B'}, {'A'}]", 2],
+["[{'F', 'B'}]", 4],
+["[{'D'}, {'A'}]", 2],
+["[{'D'}, {'B'}]", 2],
+["[{'D'}, {'F'}]", 2],
+["[{'F'}, {'A'}]", 2],
+["[{'F', 'A', 'B'}]", 3],
+["[{'F', 'B'}, {'A'}]", 2],
+["[{'D'}, {'B'}, {'A'}]", 2],
+["[{'D'}, {'F'}, {'A'}]", 2],
+["[{'D'}, {'F', 'B'}]", 2],
+["[{'D'}, {'F', 'B'}, {'A'}]", 2]
+])
 
 def test_read_dataset(df_expected):
     df_returned = read_dataset('tests/test_data.txt')
@@ -23,3 +45,6 @@ def test_read_dataset(df_expected):
 
 def test_find_F1(atoms_expected, df_expected):
     np.array_equal(find_F1(df_expected, 2), atoms_expected)
+    
+def test_spade(df_expected, result_expected):
+    np.array_equal(spade(df_expected, 2), df_expected)
